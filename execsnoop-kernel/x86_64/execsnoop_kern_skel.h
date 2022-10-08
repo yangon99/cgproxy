@@ -9,177 +9,171 @@
 #include <bpf/libbpf.h>
 
 struct execsnoop_kern {
-	struct bpf_object_skeleton *skeleton;
-	struct bpf_object *obj;
-	struct {
-		struct bpf_map *records;
-		struct bpf_map *perf_events;
-	} maps;
-	struct {
-		struct bpf_program *syscall_enter_execve;
-		struct bpf_program *syscall_exit_execve;
-	} progs;
-	struct {
-		struct bpf_link *syscall_enter_execve;
-		struct bpf_link *syscall_exit_execve;
-	} links;
+        struct bpf_object_skeleton *skeleton;
+        struct bpf_object *obj;
+        struct {
+                struct bpf_map *records;
+                struct bpf_map *perf_events;
+        } maps;
+        struct {
+                struct bpf_program *syscall_enter_execve;
+                struct bpf_program *syscall_exit_execve;
+        } progs;
+        struct {
+                struct bpf_link *syscall_enter_execve;
+                struct bpf_link *syscall_exit_execve;
+        } links;
 
 #ifdef __cplusplus
-	static inline struct execsnoop_kern *open(const struct bpf_object_open_opts *opts = nullptr);
-	static inline struct execsnoop_kern *open_and_load();
-	static inline int load(struct execsnoop_kern *skel);
-	static inline int attach(struct execsnoop_kern *skel);
-	static inline void detach(struct execsnoop_kern *skel);
-	static inline void destroy(struct execsnoop_kern *skel);
-	static inline const void *elf_bytes(size_t *sz);
+        static inline struct execsnoop_kern *
+        open(const struct bpf_object_open_opts *opts = nullptr);
+        static inline struct execsnoop_kern *open_and_load();
+        static inline int load(struct execsnoop_kern *skel);
+        static inline int attach(struct execsnoop_kern *skel);
+        static inline void detach(struct execsnoop_kern *skel);
+        static inline void destroy(struct execsnoop_kern *skel);
+        static inline const void *elf_bytes(size_t *sz);
 #endif /* __cplusplus */
 };
 
-static void
-execsnoop_kern__destroy(struct execsnoop_kern *obj)
+static void execsnoop_kern__destroy(struct execsnoop_kern *obj)
 {
-	if (!obj)
-		return;
-	if (obj->skeleton)
-		bpf_object__destroy_skeleton(obj->skeleton);
-	free(obj);
+        if (!obj)
+                return;
+        if (obj->skeleton)
+                bpf_object__destroy_skeleton(obj->skeleton);
+        free(obj);
 }
 
-static inline int
-execsnoop_kern__create_skeleton(struct execsnoop_kern *obj);
+static inline int execsnoop_kern__create_skeleton(struct execsnoop_kern *obj);
 
 static inline struct execsnoop_kern *
 execsnoop_kern__open_opts(const struct bpf_object_open_opts *opts)
 {
-	struct execsnoop_kern *obj;
-	int err;
+        struct execsnoop_kern *obj;
+        int err;
 
-	obj = (struct execsnoop_kern *)calloc(1, sizeof(*obj));
-	if (!obj) {
-		errno = ENOMEM;
-		return NULL;
-	}
+        obj = (struct execsnoop_kern *)calloc(1, sizeof(*obj));
+        if (!obj) {
+                errno = ENOMEM;
+                return NULL;
+        }
 
-	err = execsnoop_kern__create_skeleton(obj);
-	if (err)
-		goto err_out;
+        err = execsnoop_kern__create_skeleton(obj);
+        if (err)
+                goto err_out;
 
-	err = bpf_object__open_skeleton(obj->skeleton, opts);
-	if (err)
-		goto err_out;
+        err = bpf_object__open_skeleton(obj->skeleton, opts);
+        if (err)
+                goto err_out;
 
-	return obj;
+        return obj;
 err_out:
-	execsnoop_kern__destroy(obj);
-	errno = -err;
-	return NULL;
+        execsnoop_kern__destroy(obj);
+        errno = -err;
+        return NULL;
 }
 
-static inline struct execsnoop_kern *
-execsnoop_kern__open(void)
+static inline struct execsnoop_kern *execsnoop_kern__open(void)
 {
-	return execsnoop_kern__open_opts(NULL);
+        return execsnoop_kern__open_opts(NULL);
 }
 
-static inline int
-execsnoop_kern__load(struct execsnoop_kern *obj)
+static inline int execsnoop_kern__load(struct execsnoop_kern *obj)
 {
-	return bpf_object__load_skeleton(obj->skeleton);
+        return bpf_object__load_skeleton(obj->skeleton);
 }
 
-static inline struct execsnoop_kern *
-execsnoop_kern__open_and_load(void)
+static inline struct execsnoop_kern *execsnoop_kern__open_and_load(void)
 {
-	struct execsnoop_kern *obj;
-	int err;
+        struct execsnoop_kern *obj;
+        int err;
 
-	obj = execsnoop_kern__open();
-	if (!obj)
-		return NULL;
-	err = execsnoop_kern__load(obj);
-	if (err) {
-		execsnoop_kern__destroy(obj);
-		errno = -err;
-		return NULL;
-	}
-	return obj;
+        obj = execsnoop_kern__open();
+        if (!obj)
+                return NULL;
+        err = execsnoop_kern__load(obj);
+        if (err) {
+                execsnoop_kern__destroy(obj);
+                errno = -err;
+                return NULL;
+        }
+        return obj;
 }
 
-static inline int
-execsnoop_kern__attach(struct execsnoop_kern *obj)
+static inline int execsnoop_kern__attach(struct execsnoop_kern *obj)
 {
-	return bpf_object__attach_skeleton(obj->skeleton);
+        return bpf_object__attach_skeleton(obj->skeleton);
 }
 
-static inline void
-execsnoop_kern__detach(struct execsnoop_kern *obj)
+static inline void execsnoop_kern__detach(struct execsnoop_kern *obj)
 {
-	return bpf_object__detach_skeleton(obj->skeleton);
+        return bpf_object__detach_skeleton(obj->skeleton);
 }
 
 static inline const void *execsnoop_kern__elf_bytes(size_t *sz);
 
-static inline int
-execsnoop_kern__create_skeleton(struct execsnoop_kern *obj)
+static inline int execsnoop_kern__create_skeleton(struct execsnoop_kern *obj)
 {
-	struct bpf_object_skeleton *s;
-	int err;
+        struct bpf_object_skeleton *s;
+        int err;
 
-	s = (struct bpf_object_skeleton *)calloc(1, sizeof(*s));
-	if (!s)	{
-		err = -ENOMEM;
-		goto err;
-	}
+        s = (struct bpf_object_skeleton *)calloc(1, sizeof(*s));
+        if (!s) {
+                err = -ENOMEM;
+                goto err;
+        }
 
-	s->sz = sizeof(*s);
-	s->name = "execsnoop_kern";
-	s->obj = &obj->obj;
+        s->sz = sizeof(*s);
+        s->name = "execsnoop_kern";
+        s->obj = &obj->obj;
 
-	/* maps */
-	s->map_cnt = 2;
-	s->map_skel_sz = sizeof(*s->maps);
-	s->maps = (struct bpf_map_skeleton *)calloc(s->map_cnt, s->map_skel_sz);
-	if (!s->maps) {
-		err = -ENOMEM;
-		goto err;
-	}
+        /* maps */
+        s->map_cnt = 2;
+        s->map_skel_sz = sizeof(*s->maps);
+        s->maps = (struct bpf_map_skeleton *)calloc(s->map_cnt, s->map_skel_sz);
+        if (!s->maps) {
+                err = -ENOMEM;
+                goto err;
+        }
 
-	s->maps[0].name = "records";
-	s->maps[0].map = &obj->maps.records;
+        s->maps[0].name = "records";
+        s->maps[0].map = &obj->maps.records;
 
-	s->maps[1].name = "perf_events";
-	s->maps[1].map = &obj->maps.perf_events;
+        s->maps[1].name = "perf_events";
+        s->maps[1].map = &obj->maps.perf_events;
 
-	/* programs */
-	s->prog_cnt = 2;
-	s->prog_skel_sz = sizeof(*s->progs);
-	s->progs = (struct bpf_prog_skeleton *)calloc(s->prog_cnt, s->prog_skel_sz);
-	if (!s->progs) {
-		err = -ENOMEM;
-		goto err;
-	}
+        /* programs */
+        s->prog_cnt = 2;
+        s->prog_skel_sz = sizeof(*s->progs);
+        s->progs = (struct bpf_prog_skeleton *)calloc(s->prog_cnt,
+                                                      s->prog_skel_sz);
+        if (!s->progs) {
+                err = -ENOMEM;
+                goto err;
+        }
 
-	s->progs[0].name = "syscall_enter_execve";
-	s->progs[0].prog = &obj->progs.syscall_enter_execve;
-	s->progs[0].link = &obj->links.syscall_enter_execve;
+        s->progs[0].name = "syscall_enter_execve";
+        s->progs[0].prog = &obj->progs.syscall_enter_execve;
+        s->progs[0].link = &obj->links.syscall_enter_execve;
 
-	s->progs[1].name = "syscall_exit_execve";
-	s->progs[1].prog = &obj->progs.syscall_exit_execve;
-	s->progs[1].link = &obj->links.syscall_exit_execve;
+        s->progs[1].name = "syscall_exit_execve";
+        s->progs[1].prog = &obj->progs.syscall_exit_execve;
+        s->progs[1].link = &obj->links.syscall_exit_execve;
 
-	s->data = (void *)execsnoop_kern__elf_bytes(&s->data_sz);
+        s->data = (void *)execsnoop_kern__elf_bytes(&s->data_sz);
 
-	obj->skeleton = s;
-	return 0;
+        obj->skeleton = s;
+        return 0;
 err:
-	bpf_object__destroy_skeleton(s);
-	return err;
+        bpf_object__destroy_skeleton(s);
+        return err;
 }
 
 static inline const void *execsnoop_kern__elf_bytes(size_t *sz)
 {
-	*sz = 728144;
-	return (const void *)"\
+        *sz = 728144;
+        return (const void *)"\
 \x7f\x45\x4c\x46\x02\x01\x01\0\0\0\0\0\0\0\0\0\x01\0\xf7\0\x01\0\0\0\0\0\0\0\0\
 \0\0\0\0\0\0\0\0\0\0\0\x90\x14\x0b\0\0\0\0\0\0\0\0\0\x40\0\0\0\0\0\x40\0\x1f\0\
 \x01\0\x85\0\0\0\x0e\0\0\0\xbf\x06\0\0\0\0\0\0\x63\x6a\xfc\xff\0\0\0\0\x85\0\0\
@@ -31049,13 +31043,35 @@ static inline const void *execsnoop_kern__elf_bytes(size_t *sz)
 }
 
 #ifdef __cplusplus
-struct execsnoop_kern *execsnoop_kern::open(const struct bpf_object_open_opts *opts) { return execsnoop_kern__open_opts(opts); }
-struct execsnoop_kern *execsnoop_kern::open_and_load() { return execsnoop_kern__open_and_load(); }
-int execsnoop_kern::load(struct execsnoop_kern *skel) { return execsnoop_kern__load(skel); }
-int execsnoop_kern::attach(struct execsnoop_kern *skel) { return execsnoop_kern__attach(skel); }
-void execsnoop_kern::detach(struct execsnoop_kern *skel) { execsnoop_kern__detach(skel); }
-void execsnoop_kern::destroy(struct execsnoop_kern *skel) { execsnoop_kern__destroy(skel); }
-const void *execsnoop_kern::elf_bytes(size_t *sz) { return execsnoop_kern__elf_bytes(sz); }
+struct execsnoop_kern *
+execsnoop_kern::open(const struct bpf_object_open_opts *opts)
+{
+        return execsnoop_kern__open_opts(opts);
+}
+struct execsnoop_kern *execsnoop_kern::open_and_load()
+{
+        return execsnoop_kern__open_and_load();
+}
+int execsnoop_kern::load(struct execsnoop_kern *skel)
+{
+        return execsnoop_kern__load(skel);
+}
+int execsnoop_kern::attach(struct execsnoop_kern *skel)
+{
+        return execsnoop_kern__attach(skel);
+}
+void execsnoop_kern::detach(struct execsnoop_kern *skel)
+{
+        execsnoop_kern__detach(skel);
+}
+void execsnoop_kern::destroy(struct execsnoop_kern *skel)
+{
+        execsnoop_kern__destroy(skel);
+}
+const void *execsnoop_kern::elf_bytes(size_t *sz)
+{
+        return execsnoop_kern__elf_bytes(sz);
+}
 #endif /* __cplusplus */
 
 __attribute__((unused)) static void
